@@ -5,7 +5,13 @@
         "target": "es6",
         "moduleResolution": "node",
         "sourceMap": true,
-        "outDir": "dist"
+        "outDir": "dist",
+        "baseUrl": "./",
+        "paths": {
+            "@models/*": ["models/*"],
+            "@interfaces/*": ["interfaces/*"],
+            "@constants/*": ["contants/*"]
+        }
     },
     "lib": ["es2020"],
     "exclude": ["node_modules"]

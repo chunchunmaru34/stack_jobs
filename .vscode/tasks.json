@@ -13,6 +13,12 @@
             "label": "NPM: Start",
             "group": "build",
             "script": "start"
+        },
+        {
+            "type": "npm",
+            "label": "NPM: test",
+            "group": "test",
+            "script": "test"
         }
     ]
 }
