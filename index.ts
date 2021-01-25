@@ -1,7 +1,7 @@
 import 'module-alias/register';
 import puppeteer from 'puppeteer';
 
-import { JobSearchPage } from './scraper/pages/JobSearchPage/JobSearchPage';
+import { JobSearchPage, JobDetailsPage } from './scraper/pages';
 
 (async () => {
     const browser = await puppeteer.launch({
@@ -9,13 +9,28 @@ import { JobSearchPage } from './scraper/pages/JobSearchPage/JobSearchPage';
         defaultViewport: null,
     });
 
-    const blankPage = await browser.newPage();
+    const page = await browser.newPage();
 
-    const jobSearchPage = new JobSearchPage(blankPage);
-    const jobCards = await jobSearchPage.getAllJobCards();
+    // const jobSearchPage = new JobSearchPage(page);
+    // const jobCards = await jobSearchPage.getAllJobCards();
 
-    // todo: store
-    console.log(jobCards);
+    // // todo: store
+    // console.log(jobCards);
+
+    // const jobDetailsPage = new JobDetailsPage(page);
+
+    // for (const jobCard of jobCards) {
+    //     await page.goto(jobCard.detailUrl);
+    //     const jobDetails = await jobDetailsPage.getJobInfo();
+    //     console.log(jobDetails); 
+    // }
+
+    const jobSearchPage = new JobSearchPage(page);
+    const jobCards = await jobSearchPage.getJobCardsForPage(1);
+
+    const jobDetailsPage = new JobDetailsPage(page);
+    
+    console.log(await jobDetailsPage.getJobInfo());
 
     await browser.close();
 })();
