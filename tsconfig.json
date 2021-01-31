@@ -10,7 +10,8 @@
         "paths": {
             "@models/*": ["models/*"],
             "@interfaces/*": ["interfaces/*"],
-            "@constants/*": ["contants/*"]
+            "@constants/*": ["constants/*"],
+            "@utils/*": ["utils/*"]
         }
     },
     "lib": ["es2020"],

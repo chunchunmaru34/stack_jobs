@@ -1,9 +1,16 @@
 import { ElementHandle } from 'puppeteer';
 
-import { getJobTitleInfo, getCompanyInfo, getCompanyImageUrl, toJobCard } from './JobCard';
+import {
+    getJobTitleInfo,
+    getCompanyInfo,
+    getCompanyImageUrl,
+    toJobCard,
+    parseTechnologies,
+    parsePerksList,
+} from './JobCard';
 import { JobSearchPage } from './JobSearchPage';
 
-describe('Job Card', () => {
+describe.only('Job Card', () => {
     let containerElement: ElementHandle;
 
     beforeAll(async () => {
@@ -41,12 +48,29 @@ describe('Job Card', () => {
         await getCompanyImageUrl(containerElement);
     });
 
+    test('it should get techonologies list', async () => {
+        const techs = await parseTechnologies(containerElement);
+
+        expect(techs.length).toBeGreaterThan(0);
+        expect(typeof techs[0]).toBe('string');
+    });
+
+    test('it should parse perks', async () => {
+        const perks = await parsePerksList(containerElement);
+
+        expect(typeof perks).toBe('object');
+    });
+
     test('it should return a valid info object from element', async () => {
         const jobCardInfo = await toJobCard(containerElement);
+
+        expect(jobCardInfo).toHaveProperty('jobId');
+        expect(jobCardInfo.jobId).toBeGreaterThan(0);
 
         expect(jobCardInfo).toHaveProperty('jobTitle');
         expect(jobCardInfo).toHaveProperty('detailUrl');
         expect(jobCardInfo).toHaveProperty('companyName');
         expect(jobCardInfo).toHaveProperty('companyLocation');
+        expect(jobCardInfo).toHaveProperty('technologies');
     });
 });

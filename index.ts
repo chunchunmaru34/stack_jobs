@@ -1,7 +1,7 @@
 import 'module-alias/register';
-import puppeteer from 'puppeteer';
-
-import { JobSearchPage, JobDetailsPage } from './scraper/pages';
+import puppeteer, { Page } from 'puppeteer';
+import { connect, IDatabase, IRecord } from '@chunchun-db/client';
+import { JobSearchPage } from './scraper/pages';
 
 (async () => {
     const browser = await puppeteer.launch({
@@ -11,26 +11,19 @@ import { JobSearchPage, JobDetailsPage } from './scraper/pages';
 
     const page = await browser.newPage();
 
-    // const jobSearchPage = new JobSearchPage(page);
-    // const jobCards = await jobSearchPage.getAllJobCards();
+    const client = await connect({ port: 1488 });
+    const db = await client.getDatabase('stack_jobs');
 
-    // // todo: store
-    // console.log(jobCards);
-
-    // const jobDetailsPage = new JobDetailsPage(page);
-
-    // for (const jobCard of jobCards) {
-    //     await page.goto(jobCard.detailUrl);
-    //     const jobDetails = await jobDetailsPage.getJobInfo();
-    //     console.log(jobDetails); 
-    // }
-
-    const jobSearchPage = new JobSearchPage(page);
-    const jobCards = await jobSearchPage.getJobCardsForPage(1);
-
-    const jobDetailsPage = new JobDetailsPage(page);
-    
-    console.log(await jobDetailsPage.getJobInfo());
+    await fetchAllJobs(page, db);
 
     await browser.close();
 })();
+
+async function fetchAllJobs(page: Page, db: IDatabase) {
+    const jobSearchPage = new JobSearchPage(page);
+    const jobCards = await jobSearchPage.getAllJobCards();
+
+    const collection = await db.getCollection<IJobCard & IRecord>('job_cards');
+
+    await collection.add(jobCards);
+}

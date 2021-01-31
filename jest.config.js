@@ -12,5 +12,6 @@ module.exports = {
         '@models/(.*)$': '<rootDir>/models/$1',
         '@interfaces/(.*)$': '<rootDir>/interfaces/$1',
         '@constants/(.*)$': '<rootDir>/constants/$1',
+        '@utils/(.*)$': '<rootDir>/utils/$1',
     },
 };

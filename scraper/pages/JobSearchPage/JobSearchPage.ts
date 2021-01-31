@@ -69,7 +69,7 @@ export class JobSearchPage {
 
         const pageNumbers = await this.getAvailablePages();
 
-        const jobCards: JobCard[] = [];
+        const jobCards: IJobCard[] = [];
         for (const pageNum of pageNumbers.slice(0, limitToPageN)) {
             const pageCards = await this.getJobCardsForPage(pageNum);
             jobCards.push(...pageCards);
