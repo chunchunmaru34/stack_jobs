@@ -1,4 +1,4 @@
-interface IJobCard {
+export interface IJobCard {
     jobId: number;
     jobTitle: string;
     detailUrl: string;
@@ -8,4 +8,8 @@ interface IJobCard {
     technologies: string[];
     salary?: string;
     remote?: string;
+}
+
+export interface IJobCardClosed extends IJobCard {
+    dateClosed: string;
 }

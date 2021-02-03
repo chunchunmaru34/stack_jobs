@@ -3,6 +3,7 @@ import { Page } from 'puppeteer';
 import { Maybe } from '@models/util/Maybe';
 
 import { toJobCard } from './JobCard';
+import { IJobCard } from '@models/IJobCard';
 
 export const jobListItemSelector = '.js-search-results [data-jobid][data-result-id][data-preview-url]';
 const URL = 'https://stackoverflow.com/jobs?q=react&tl=reactjs';

@@ -3,6 +3,7 @@ import { ElementHandle } from 'puppeteer';
 import { Maybe } from '@models/util/Maybe';
 import { toInnerText } from '@utils/puppeteer';
 import { salaryRange } from '@constants/regex';
+import { IJobCard } from '@models/IJobCard';
 
 export async function getJobTitleInfo(containerElement: ElementHandle) {
     const headerBlockSelector = 'h2 a';
