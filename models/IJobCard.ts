@@ -8,6 +8,9 @@ export interface IJobCard {
     technologies: string[];
     salary?: string;
     remote?: string;
+    isEquityIncluded: boolean;
+    isVisaSponsored: boolean;
+    isPaidRelocation: boolean;
 }
 
 export interface IJobCardClosed extends IJobCard {
