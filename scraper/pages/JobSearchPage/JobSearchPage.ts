@@ -1,12 +1,15 @@
 import { Page } from 'puppeteer';
+import R, { range, head } from 'ramda';
 
 import { Maybe } from '@models/util/Maybe';
-
-import { toJobCard } from './JobCard';
+import { timer } from '@utils/async';
 import { IJobCard } from '@models/IJobCard';
 
+import { toJobCard } from './JobCard';
+
 export const jobListItemSelector = '.js-search-results [data-jobid][data-result-id][data-preview-url]';
-const URL = 'https://stackoverflow.com/jobs?q=react&tl=reactjs';
+const URL = 'https://stackoverflow.com/jobs?';
+const searchPatams = 'q=react&tl=reactjs';
 
 export class JobSearchPage {
     private page: Page;
@@ -29,7 +32,7 @@ export class JobSearchPage {
         this.currentPageNumber = pageNum;
     }
 
-    async getAvailablePages() {
+    async getAvailablePages(): Promise<number[]> {
         const paginationBar = Maybe.of(await this.page.$('.s-pagination')).valueOrThrow(
             'Cannot find pagination bar'
         );
@@ -44,7 +47,10 @@ export class JobSearchPage {
                 )
             );
 
-        return pageNumberItems.map(Number).filter(Boolean);
+        const pageNumbers = pageNumberItems.map(Number).filter(Boolean);
+        const [firstPage, lastPage] = [R.head(pageNumbers), R.last(pageNumbers)];
+
+        return range(firstPage, lastPage + 1);
     }
 
     async getJobCardsElements() {
@@ -74,6 +80,7 @@ export class JobSearchPage {
         for (const pageNum of pageNumbers.slice(0, limitToPageN)) {
             const pageCards = await this.getJobCardsForPage(pageNum);
             jobCards.push(...pageCards);
+            await timer(2000);
         }
 
         return jobCards;

@@ -5,6 +5,15 @@ import { connect, ICollection, IDatabase, IRecord } from '@chunchun-db/client';
 import { JobSearchPage } from './scraper/pages';
 import { IJobCard } from '@models/IJobCard';
 
+const connectionOptions = {
+    port: 1488,
+    host: 'http://192.168.1.30',
+};
+
+const jobCardsDbName = 'stack_jobs';
+const jobCardsCollectionName = 'job_cards_full';
+const jobCardsHistoryCollectionName = 'job_cards_full_history';
+
 (async () => {
     const browser = await puppeteer.launch({
         headless: false,
@@ -13,13 +22,13 @@ import { IJobCard } from '@models/IJobCard';
 
     const page = await browser.newPage();
 
-    const client = await connect({ port: 1488, host: 'http://192.168.1.30' });
+    const client = await connect(connectionOptions);
 
     let db: IDatabase;
     try {
-        db = await client.getDatabase('stack_jobs');
+        db = await client.getDatabase(jobCardsDbName);
     } catch (error) {
-        db = await client.createDatabase('stack_jobs');
+        db = await client.createDatabase(jobCardsDbName);
     }
 
     await fetchAllJobs(page, db);
@@ -33,9 +42,9 @@ async function fetchAllJobs(page: Page, db: IDatabase) {
 
     let collection: ICollection<IJobCard & IRecord>;
     try {
-        collection = await db.getCollection<IJobCard & IRecord>('job_cards');
+        collection = await db.getCollection<IJobCard & IRecord>(jobCardsCollectionName);
     } catch (error) {
-        collection = await db.createCollection<IJobCard & IRecord>('job_cards');
+        collection = await db.createCollection<IJobCard & IRecord>(jobCardsCollectionName);
     }
 
     const dateClosed = new Date().toISOString();
@@ -45,9 +54,11 @@ async function fetchAllJobs(page: Page, db: IDatabase) {
 
     let historyCollection: ICollection<IJobCardClosed & IRecord>;
     try {
-        historyCollection = await db.getCollection<IJobCardClosed & IRecord>('job_cards_history');
+        historyCollection = await db.getCollection<IJobCardClosed & IRecord>(jobCardsHistoryCollectionName);
     } catch (error) {
-        historyCollection = await db.createCollection<IJobCardClosed & IRecord>('job_cards_history');
+        historyCollection = await db.createCollection<IJobCardClosed & IRecord>(
+            jobCardsHistoryCollectionName
+        );
     }
 
     if (closedItems.length) {
