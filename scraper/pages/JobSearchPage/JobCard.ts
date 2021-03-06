@@ -41,9 +41,7 @@ export async function getCompanyImageUrl(containerElement: ElementHandle) {
 }
 
 export async function parseTechnologies(containerElement: ElementHandle) {
-    const tags = Maybe.of(await containerElement.$$('a.post-tag')).valueOrThrow(
-        'Cannot find technologies tags'
-    );
+    const tags = Maybe.of(await containerElement.$$('a.s-tag')).valueOrThrow('Cannot find technologies tags');
 
     return Promise.all(tags.map(toInnerText));
 }
