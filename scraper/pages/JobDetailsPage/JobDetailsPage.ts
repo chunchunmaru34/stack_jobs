@@ -1,33 +1,45 @@
+import { IJobCard } from '@models/IJobCard';
 import { ElementHandle, Page } from 'puppeteer';
 
 import { Maybe } from '@models/util/Maybe';
-import { getPropertyValue } from '@utils/puppeteer';
+import { getPropertyValue, toInnerText } from '@utils/puppeteer';
+import * as R from 'ramda';
+import { IJobDetails } from '@models/IJobDetails';
 
-const NOT_FOUND_DEFAULT_STRING = '-';
+import { MandatorySections, SECTIONS, OptionalSections } from './constants';
+import { PageSections } from './types';
+import { mapSectionsToJobDetails } from './sectionParsers';
+import { salaryRange } from '@constants/regex';
+import { ValuesOf } from '@models/util';
 
-enum SECTIONS {
-    ABOUT_JOB = 'About this job',
-    TECHNOLOGIES = 'Technologies',
-    JOB_DESCRIPTION = 'Job description',
-    REMOTE_DETAILS = 'Remote details',
-    JOEL_TEST = 'Joel Test',
-}
-
-const toInnerText = async (element: ElementHandle) => getPropertyValue('innerText')(element);
-
-const identity = <T>(value: T) => value;
+const getSectionTitle = async (el: ElementHandle) =>
+    Maybe.of(await el.$('h2'))
+        .map(toInnerText)
+        .valueOrDefault(Promise.resolve(''));
 
 export class JobDetailsPage {
     page: Page;
 
-    handlersBySection = {
-        [SECTIONS.ABOUT_JOB]: this.parseAboutSection,
-        [SECTIONS.JOB_DESCRIPTION]: this.parseJobDescriptionSection,
-        [SECTIONS.TECHNOLOGIES]: this.parseTechnologiesSection,
-    };
-
     constructor(page: Page) {
         this.page = page;
+    }
+
+    async loadPageFor(jobCard: IJobCard) {
+        await this.page.goto(jobCard.detailUrl, {
+            waitUntil: 'networkidle2',
+        });
+    }
+
+    async getMainContainer() {
+        const mainContainer = Maybe.of(await this.page.$('#content')).valueOrThrow('No main container found');
+
+        return mainContainer;
+    }
+
+    async getHeader(mainContainer: ElementHandle<Element>) {
+        const header = Maybe.of(await mainContainer.$('header')).valueOrThrow('No job header found');
+
+        return header;
     }
 
     async parseHeader(header: ElementHandle) {
@@ -38,158 +50,86 @@ export class JobDetailsPage {
         const companyUrl = await getPropertyValue('href')(companyLink);
         const companyName = await toInnerText(companyLink);
 
-        const companyInfo = {
-            url: companyUrl,
-            name: companyName,
-        };
+        const tagLike = await header
+            .$$('ul > li > span')
+            .then((items) => Promise.all(items.map(toInnerText)));
 
-        const withMaybe = (val: ElementHandle) =>
-            Maybe.of(val).map(toInnerText).valueOrDefault(Promise.resolve(NOT_FOUND_DEFAULT_STRING));
-
-        const [salary, remote, sponsoredVisa] = await Promise.all(
-            ['span.-salary', 'span.-remote', 'span.-visa'].map((selector) =>
-                header.$(selector).then(withMaybe)
-            )
-        );
-
-        return { companyInfo, salary, remote, sponsoredVisa };
-    }
-
-    async parseAboutSection(section: ElementHandle) {
-        const lines = await section.$$('.mb8');
-        const keyValuePairs = await Promise.all(
-            lines.map((line) => line.$$('span').then((spans) => Promise.all(spans.map(toInnerText))))
-        );
-
-        const lineMap = keyValuePairs.reduce((acc, [key, value]) => {
-            acc[key.trim().replace(/:/g, '')] = value.trim();
-            return acc;
-        }, {});
-
-        const lineTitles = [
-            'Job type',
-            'Experience level',
-            'Role',
-            'Industry',
-            'Company size',
-            'Company type',
-        ];
-
-        const [jobType, experienceLevel, role, industry, companySize, companyType] = lineTitles.map(
-            (title) => lineMap[title]
-        );
+        const salary = tagLike.find((item) => item.match(salaryRange));
+        const remote = tagLike.find((item) => item.toLowerCase().includes('remote'));
+        const isVisaSponsored = tagLike.some((item) => item.toLowerCase().includes('visa'));
+        const isPaidRelocation = tagLike.some((item) => item.toLowerCase().includes('relocation'));
+        const isEquityIncluded = tagLike.some((item) => item.toLowerCase().includes('equity'));
 
         return {
-            jobType,
-            experienceLevel,
-            role,
-            industry,
-            companySize,
-            companyType,
+            companyUrl,
+            companyName,
+            salary,
+            remote,
+            isVisaSponsored,
+            isPaidRelocation,
+            isEquityIncluded,
         };
-    }
-
-    async parseTechnologiesSection(section: ElementHandle) {
-        const links = await section.$$('a');
-        const tuples = await Promise.all(
-            links.map((link) => Promise.all([getPropertyValue('href')(link), toInnerText(link)]))
-        );
-
-        return tuples.map(([url, name]) => ({ url, name }));
-    }
-
-    async parseJobDescriptionSection(section: ElementHandle) {
-        return section.$('div').then(toInnerText);
-    }
-
-    async parseAboutCompanySection(section: ElementHandle) {
-        return section.$('div').then(toInnerText);
-    }
-
-    async parseJoelTestSection(section: ElementHandle) {
-        const lines = await section.$$('.mb4');
-
-        const tuples = await Promise.all(
-            lines.map((line) => Promise.all([line.$('.iconCheckmark').then(Boolean), toInnerText(line)]))
-        );
-
-        return tuples.map(([isChecked, title]) => ({
-            title,
-            isChecked,
-        }));
     }
 
     async getDetailsSections(mainContainer: ElementHandle, companyName: string) {
         const sectionElements = await mainContainer.$$('section');
 
-        const getSectionTitle = async (el: ElementHandle) =>
-            Maybe.of(await el.$('h2'))
-                .map(toInnerText)
-                .valueOrDefault(Promise.resolve(''));
+        const sections = (
+            await Promise.all(sectionElements.map((s) => Promise.all([getSectionTitle(s), s])))
+        ).filter(([title]) => !!title);
 
-        const sections = (await Promise.all(sectionElements.map((s) => Promise.all([getSectionTitle(s), s]))))
-            .filter(([title]) => !!title)
-            .map(([title, el]) => ({
-                title,
-                el,
-            }));
+        const findSection = (title: string) => sections.find(([parsedTitle]) => parsedTitle === title);
+        const safeFindSection = (title: string) =>
+            Maybe.of(findSection(title)).valueOrThrow(`Could not find section ${title}`);
 
-        const [aboutSection, jobDescriptionSection, technologiesSection] = [
-            SECTIONS.ABOUT_JOB,
-            SECTIONS.JOB_DESCRIPTION,
-            SECTIONS.TECHNOLOGIES,
-        ]
-            .map((sectionTitle) =>
-                Maybe.of(sections.find((s) => s.title === sectionTitle)).valueOrThrow(
-                    `Could not find section ${sectionTitle}`
+        const mandatorySections: [
+            ValuesOf<typeof MandatorySections>,
+            ElementHandle<Element>
+        ][] = MandatorySections.map((sectionTitle) => [sectionTitle, safeFindSection(sectionTitle)[1]]);
+
+        const optionalSections: [
+            ValuesOf<typeof OptionalSections>,
+            Maybe<ElementHandle<Element>>
+        ][] = OptionalSections.filter(
+            (section) => section !== SECTIONS.ABOUT_COMPANY_SECTION
+        ).map((title) => [title, Maybe.of(findSection(title)).map(R.prop('1'))]);
+
+        optionalSections.push([
+            SECTIONS.ABOUT_COMPANY_SECTION,
+            Maybe.of(
+                sections.find(
+                    ([parsedTitle]) => parsedTitle.includes('About') && parsedTitle.includes(companyName)
                 )
-            )
-            .map((section) => section.el);
-
-        const aboutCompanySection = sections.find(
-            (s) => s.title.includes('About') && s.title.includes(companyName)
-        ).el;
-
-        const joelTestSection = Maybe.of(sections.find((s) => s.title === SECTIONS.JOEL_TEST)?.el);
+            ).map(R.prop('1')),
+        ]);
 
         return {
-            aboutSection,
-            jobDescriptionSection,
-            technologiesSection,
-            aboutCompanySection,
-            joelTestSection,
+            mandatorySections: Object.fromEntries(mandatorySections) as PageSections['mandatorySections'],
+            optionalSections: Object.fromEntries(optionalSections) as PageSections['optionalSections'],
         };
     }
 
-    async getJobInfo() {
-        const mainContainer = Maybe.of(await this.page.$('#mainbar')).valueOrThrow('No main container found');
+    async getJobDetailsFor(jobCard: IJobCard): Promise<IJobDetails> {
+        try {
+            await this.loadPageFor(jobCard);
 
-        const header = Maybe.of(await mainContainer.$('header')).valueOrThrow('No job header found');
-        const headerInfo = await this.parseHeader(header);
+            const mainContainer = await this.getMainContainer();
+            const header = await this.getHeader(mainContainer);
 
-        const {
-            aboutSection,
-            technologiesSection,
-            jobDescriptionSection,
-            joelTestSection,
-            aboutCompanySection,
-        } = await this.getDetailsSections(mainContainer, headerInfo.companyInfo.name);
+            const headerInfo = await this.parseHeader(header);
 
-        const aboutInfo = await this.parseAboutSection(aboutSection);
-        const techInfo = await this.parseTechnologiesSection(technologiesSection);
-        const description = await this.parseJobDescriptionSection(jobDescriptionSection);
-        const joelTest = await joelTestSection
-            .map(this.parseJoelTestSection)
-            .valueOrDefault(Promise.resolve([]));
-        const aboutCompany = await this.parseAboutCompanySection(aboutCompanySection);
+            const sections = await this.getDetailsSections(mainContainer, headerInfo.companyName);
+            const partialjobDetails = await mapSectionsToJobDetails(sections);
 
-        return {
-            headerInfo,
-            aboutInfo,
-            techInfo,
-            description,
-            joelTest,
-            aboutCompany,
-        };
+            return {
+                jobId: jobCard.jobId,
+                imageUrl: jobCard.imageUrl,
+                ...partialjobDetails,
+                ...headerInfo,
+            } as IJobDetails;
+        } catch (e) {
+            console.log('Exception at ' + jobCard.detailUrl);
+            console.log(e);
+        }
     }
 }

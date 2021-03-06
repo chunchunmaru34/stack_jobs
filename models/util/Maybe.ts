@@ -3,8 +3,8 @@ export class Maybe<T> implements IFunctor<T> {
         return new Maybe(x);
     }
 
-    static None() {
-        return new Maybe(null);
+    static None<T>() {
+        return new Maybe<T>(null);
     }
 
     static Some<T>(x: NonNullable<T>) {
@@ -38,6 +38,10 @@ export class Maybe<T> implements IFunctor<T> {
             throw new Error(message);
         }
 
+        return this._value;
+    }
+
+    getValue() {
         return this._value;
     }
 

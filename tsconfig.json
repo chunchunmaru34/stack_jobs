@@ -1,12 +1,13 @@
 {
     "compilerOptions": {
-        "module": "commonJs",
+        "module": "commonjs",
         "esModuleInterop": true,
-        "target": "es6",
+        "target": "es2020",
         "moduleResolution": "node",
         "sourceMap": true,
         "outDir": "dist",
         "baseUrl": "./",
+        "allowSyntheticDefaultImports": true,
         "paths": {
             "@models/*": ["models/*"],
             "@interfaces/*": ["interfaces/*"],
@@ -14,6 +15,6 @@
             "@utils/*": ["utils/*"]
         }
     },
-    "lib": ["es2020"],
-    "exclude": ["node_modules"]
+    "lib": ["es2019", "es2020", "esnext"],
+    "exclude": ["node_modules", "dist"]
 }
