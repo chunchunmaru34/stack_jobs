@@ -1,7 +1,7 @@
 import * as R from 'ramda';
 
 import { IJobCard } from '@models/IJobCard';
-import { promisePool, timer } from '@utils/async';
+import { promiseQueue, timer } from '@utils/async';
 import { ValuesOf } from '@models/util';
 
 import { JobSearchPage } from './../JobSearchPage/JobSearchPage';
@@ -86,7 +86,7 @@ describe('Job Details Page', () => {
             await initDataForCard(jobCards[0]);
         });
 
-        describe('mandatory', () => {
+        describe.only('mandatory', () => {
             it('should parse "About" section', async () => {
                 const sectionData = await parsersBySection[SECTIONS.ABOUT_JOB](
                     sections.mandatorySections[SECTIONS.ABOUT_JOB]
@@ -216,9 +216,9 @@ describe('Job Details Page', () => {
             .slice(0, MAX_CARDS_FOR_TEST)
             .map((card) => () => jobPage.getJobDetailsFor(card));
 
-        const result = await promisePool(tasks, 1, 1500);
+        const result = await promiseQueue(1500, tasks);
 
-        expect(result.length).toBe(jobCards.length);
+        expect(result.length).toBe(MAX_CARDS_FOR_TEST);
 
         const isAllTruthy = !result.map(Boolean).some(R.not);
         expect(isAllTruthy).toBe(true);

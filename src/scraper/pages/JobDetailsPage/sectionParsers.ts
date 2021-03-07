@@ -35,7 +35,7 @@ export async function parseAboutSection(section: ElementHandle) {
 
     return {
         jobType,
-        experienceLevel: experienceLevel && new Set(experienceLevel.split(', ') as ExperienceLevel[]),
+        experienceLevel: experienceLevel?.split(', ') as ExperienceLevel[],
         role,
         industry,
         companySize,
@@ -69,7 +69,9 @@ export async function parseJoelTestSection(section: ElementHandle) {
     const lines = await section.$$('.mb4');
 
     const tuples = await Promise.all(
-        lines.map((line) => Promise.all([toInnerText(line), line.$('.iconCheckmark').then(Boolean)]))
+        lines.map((line) =>
+            Promise.all([toInnerText(line).then((x) => x.trim()), line.$('.iconCheckmark').then(Boolean)])
+        )
     );
 
     return { joelTest: Object.fromEntries(tuples) };

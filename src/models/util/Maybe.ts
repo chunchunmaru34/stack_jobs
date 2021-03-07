@@ -19,7 +19,7 @@ export class Maybe<T> implements IFunctor<T> {
         return !this.isNone;
     }
 
-    constructor(private _value: T) {}
+    constructor(private _value: T | null | undefined) {}
 
     map<TResult>(fn: (value: T) => TResult): Maybe<TResult> {
         return this.isNone ? Maybe.None() : Maybe.of(fn(this._value));

@@ -10,7 +10,7 @@ import {
 } from './JobCard';
 import { JobSearchPage } from './JobSearchPage';
 
-describe('Job Card', () => {
+describe.skip('Job Card', () => {
     let containerElement: ElementHandle;
 
     beforeAll(async () => {
