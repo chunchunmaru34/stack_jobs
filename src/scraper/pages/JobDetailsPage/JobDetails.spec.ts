@@ -86,7 +86,7 @@ describe('Job Details Page', () => {
             await initDataForCard(jobCards[0]);
         });
 
-        describe.only('mandatory', () => {
+        describe('mandatory', () => {
             it('should parse "About" section', async () => {
                 const sectionData = await parsersBySection[SECTIONS.ABOUT_JOB](
                     sections.mandatorySections[SECTIONS.ABOUT_JOB]

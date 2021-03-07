@@ -1,6 +1,6 @@
 import { JobSearchPage } from './JobSearchPage';
 
-describe.skip('Job Search Page', () => {
+describe('Job Search Page', () => {
     let jobsPage: JobSearchPage;
 
     beforeAll(async () => {
