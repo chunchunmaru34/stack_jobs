@@ -1,2 +1,2 @@
 export { runJobCardsScraper } from './jobCardsScraper';
-export { runJobDetailsScraper } from './JobDetailsScraper';
+export { runJobDetailsScraper } from './jobDetailsScraper';
