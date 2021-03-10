@@ -8,8 +8,9 @@ export enum SECTIONS {
     ABOUT_COMPANY_SECTION = 'About ${companyName}',
 }
 
-export const MandatorySections = <const>[SECTIONS.ABOUT_JOB, SECTIONS.TECHNOLOGIES, SECTIONS.JOB_DESCRIPTION];
+export const MandatorySections = <const>[SECTIONS.ABOUT_JOB, SECTIONS.JOB_DESCRIPTION];
 export const OptionalSections = <const>[
+    SECTIONS.TECHNOLOGIES,
     SECTIONS.REMOTE_DETAILS,
     SECTIONS.BENEFITS,
     SECTIONS.JOEL_TEST,

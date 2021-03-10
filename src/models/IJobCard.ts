@@ -5,7 +5,7 @@ export interface IJobCard {
     companyName: string;
     companyLocation: string;
     imageUrl?: string;
-    technologies: string[];
+    technologies?: string[];
     salary?: string;
     remote?: string;
     isEquityIncluded: boolean;
