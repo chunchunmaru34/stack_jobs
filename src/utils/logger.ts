@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const URL = 'https://api.telegram.org/bot480428639:AAHCdvoVomY1Q3SXpLB_jqKsa89oWXaqPls/sendMessage';
+const URL = `https://api.telegram.org/${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`;
 const CHAT_ID = 397700988;
 const TG_MAX_CHARS = 4096;
 
